@@ -1,0 +1,36 @@
+%  ============================ XcorrOFDM =================================
+
+% nFFT = 256;           % set the number of fft
+% CP_length = 18;        % set the number of cp
+nFFT = 4096;           % set the number of fft
+CP_length = 288;        % set the number of cp
+%  samplesPerSlot = 14*(nFFT+CP_length);
+% samplesPerSlot = 3840;
+samplesPerSlot = 61440;
+% samplesPerSlot = 50*samplesPerSlot;
+fxo = figure;
+set(fxo,'name','xCorrOFDM');
+
+if xcorrOFDM == 1
+        
+    arm1 = rec_data_duc(1:end-nFFT,k);
+    arm2 = rec_data_duc(1+nFFT:end,k);
+
+    % Conjugate multiply the inputs and integrate over the CP length
+    CPcorr_unfilt = arm1.*conj(arm2);
+    CPcorr = conv(CPcorr_unfilt, ones(CP_length,1));
+    CPcorr = CPcorr(CP_length:end);
+
+    % Average the estimates by combining all available slots
+    CPcorr_avg = CPcorr(1:(floor(length(CPcorr)/samplesPerSlot) * samplesPerSlot));
+    nSlots = length(CPcorr_avg)/samplesPerSlot;
+    CPcorr_avg = sum(reshape(CPcorr_avg,samplesPerSlot,nSlots) ,2); 
+
+    %Take the absolute value of the averaged output
+    CPcorrMag = abs(CPcorr_avg);
+    corr(:,k) = CPcorrMag;
+
+    %subplot(3,1,k);
+    plot([1:length(CPcorr_avg)]/Para.fs_resamp,corr(:,k));
+
+end
